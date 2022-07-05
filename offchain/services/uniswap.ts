@@ -35,7 +35,7 @@ export function createPool(pool: UniswapApiPool): Pool {
   );
 }
 
-export async function getSwapPaths(
+export async function generateSwapPaths(
   pools: UniswapApiPool[]
 ): Promise<[UniswapApiPool, UniswapApiPool, UniswapApiPool][]> {
   const swapPaths: [UniswapApiPool, UniswapApiPool, UniswapApiPool][] = [];

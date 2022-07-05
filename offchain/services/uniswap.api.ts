@@ -55,6 +55,10 @@ async function getTicksForPool(
     },
   });
 
+  if (response.data.errors) {
+    console.log("ERROR");
+    console.log(response.data);
+  }
   // console.log(response.data.errors);
   // console.log(response.data.data.pool.ticks);
   return response.data.data.pool.ticks;
@@ -112,7 +116,6 @@ async function getPools(
         do {
           ticksSkip += 100;
           ticks = await getTicksForPool(pool.id, 100, ticksSkip);
-          console.log(pool.id, ticksSkip);
           pool.ticks = [...pool.ticks, ...ticks];
         } while (ticks.length > 0);
       }
