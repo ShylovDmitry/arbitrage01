@@ -1,15 +1,19 @@
 import { artifacts, ethers } from "hardhat";
 import fs from "fs";
 import { Contract } from "ethers";
+import hre from "hardhat";
 
 async function main() {
-  const [deployer] = await ethers.getSigners();
-  console.log(
-    "Deploying the contracts with the account:",
-    await deployer.getAddress()
-  );
+  const networkName = hre.network.name;
+  console.log("NETWORK:", networkName);
 
-  console.log("Account balance:", (await deployer.getBalance()).toString());
+  const [deployer] = await ethers.getSigners();
+  console.log("Account:", await deployer.getAddress());
+
+  console.log(
+    "Account balance BEFORE:",
+    (await deployer.getBalance()).toString()
+  );
 
   const UniswapTradeContact = await ethers.getContractFactory("UniswapTrade");
   const uniswapTrade = await UniswapTradeContact.deploy();
@@ -17,15 +21,19 @@ async function main() {
   await uniswapTrade.deployed();
 
   console.log("UniswapTrade deployed to:", uniswapTrade.address);
+  console.log(
+    "Account balance AFTER:",
+    (await deployer.getBalance()).toString()
+  );
 
-  saveFrontendFiles(uniswapTrade);
+  saveFrontendFiles(networkName, uniswapTrade);
 }
 
-function saveFrontendFiles(contact: Contract) {
-  const contractsDir = __dirname + "/../data";
+function saveFrontendFiles(networkName: string, contact: Contract) {
+  const contractsDir = __dirname + `/../data/${networkName}`;
 
   if (!fs.existsSync(contractsDir)) {
-    fs.mkdirSync(contractsDir);
+    fs.mkdirSync(contractsDir, { recursive: true });
   }
 
   fs.writeFileSync(

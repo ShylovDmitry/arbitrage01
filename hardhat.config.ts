@@ -13,13 +13,31 @@ dotenv.config();
 // Go to https://hardhat.org/config/ to learn more
 
 const config: HardhatUserConfig = {
-  defaultNetwork: "ropsten",
-  solidity: "0.8.4",
+  defaultNetwork: "mainnet",
+  solidity: {
+    version: "0.8.4",
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 200,
+      },
+    },
+  },
   networks: {
+    mainnet: {
+      url: `https://mainnet.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
+      accounts:
+        process.env.PRIVATE_KEY_MAINNET !== undefined
+          ? [process.env.PRIVATE_KEY_MAINNET]
+          : [],
+      gasMultiplier: 1.05,
+    },
     ropsten: {
       url: `https://ropsten.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
       accounts:
-        process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+        process.env.PRIVATE_KEY_ROPSTEN !== undefined
+          ? [process.env.PRIVATE_KEY_ROPSTEN]
+          : [],
     },
   },
   paths: {
@@ -29,7 +47,7 @@ const config: HardhatUserConfig = {
     artifacts: "./onchain/artifacts",
   },
   gasReporter: {
-    enabled: process.env.REPORT_GAS !== undefined,
+    enabled: process.env.REPORT_GAS === "true",
     currency: "USD",
   },
   etherscan: {

@@ -3,6 +3,7 @@ import { createPool, getSwapPaths } from "./services/uniswap";
 import { CurrencyAmount, Token } from "@uniswap/sdk-core";
 import { ethers } from "ethers";
 import { getToken } from "./helpers";
+import { uniswapTrade } from "../onchain/src/uniswapTrade";
 
 const WETH = getToken("WETH");
 
@@ -97,21 +98,59 @@ async function main() {
   console.time("ProfitableSwapPaths");
 
   const profit = await Promise.all([
-    await getProfitableSwapPaths(0.5, swapPaths),
-    await getProfitableSwapPaths(1, swapPaths),
-    await getProfitableSwapPaths(1.5, swapPaths),
-    await getProfitableSwapPaths(2, swapPaths),
-    await getProfitableSwapPaths(2.5, swapPaths),
-    await getProfitableSwapPaths(3, swapPaths),
+    await getProfitableSwapPaths(0.1, swapPaths),
+    await getProfitableSwapPaths(0.15, swapPaths),
+    // await getProfitableSwapPaths(0.3, swapPaths),
+    // await getProfitableSwapPaths(0.4, swapPaths),
+    // await getProfitableSwapPaths(0.5, swapPaths),
+
+    // await getProfitableSwapPaths(1, swapPaths),
+    // await getProfitableSwapPaths(1.5, swapPaths),
+    // await getProfitableSwapPaths(2, swapPaths),
+    // await getProfitableSwapPaths(2.5, swapPaths),
+    // await getProfitableSwapPaths(3, swapPaths),
   ]);
 
   const flat: ProfitableSwapPath[] = profit.flat();
 
-  flat
-    .sort((a, b) =>
-      a.profitAmount.toExact().localeCompare(b.profitAmount.toExact())
-    )
-    .map(displayProfit);
+  const sortedFlat = flat.sort((a, b) =>
+    a.profitAmount.toExact().localeCompare(b.profitAmount.toExact())
+  );
+
+  sortedFlat.map(displayProfit);
+  const mostProfitable = sortedFlat[sortedFlat.length - 1];
+
+  const minProfitAmount = CurrencyAmount.fromRawAmount(
+    WETH,
+    ethers.utils.parseUnits("0.002", WETH.decimals).toString()
+  );
+  if (mostProfitable.profitAmount.greaterThan(minProfitAmount)) {
+    console.log("----- Most Profitable -----");
+    displayProfit(mostProfitable);
+
+    const { amountIn, pool0, pool1, pool2, profitAmount } = mostProfitable;
+
+    await uniswapTrade(
+      "mainnet",
+      ethers.utils.parseUnits(amountIn.toExact(), WETH.decimals),
+      ethers.utils.parseUnits(profitAmount.toExact(), WETH.decimals),
+      pool0.token0.id.toLowerCase() === WETH.address.toLowerCase()
+        ? pool0.token0.id
+        : pool0.token1.id,
+      pool0.feeTier,
+      pool0.token0.id.toLowerCase() !== WETH.address.toLowerCase()
+        ? pool0.token0.id
+        : pool0.token1.id,
+      pool1.feeTier,
+      pool2.token0.id.toLowerCase() !== WETH.address.toLowerCase()
+        ? pool2.token0.id
+        : pool2.token1.id,
+      pool2.feeTier,
+      pool2.token0.id.toLowerCase() === WETH.address.toLowerCase()
+        ? pool2.token0.id
+        : pool2.token1.id
+    );
+  }
 
   console.timeEnd("ProfitableSwapPaths");
 }

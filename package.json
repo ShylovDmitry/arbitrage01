@@ -5,8 +5,12 @@
   "main": "index.js",
   "scripts": {
     "research": "ts-node offchain/index.ts",
-    "deploy:ropsten": "npx hardhat run --network ropsten onchain/scripts/deploy.ts",
-    "run:ropsten": "npx hardhat run --network ropsten onchain/scripts/run.ts",
+    "mainnet:deploy": "npx hardhat run onchain/scripts/deploy.ts",
+    "mainnet:run": "npx hardhat run onchain/scripts/run.ts",
+    "mainnet:watch": "npx hardhat run onchain/scripts/watch.ts",
+    "ropsten:deploy": "npx hardhat run --network ropsten onchain/scripts/deploy.ts",
+    "ropsten:run": "npx hardhat run --network ropsten onchain/scripts/run.ts",
+    "ropsten:watch": "npx hardhat run --network ropsten onchain/scripts/watch.ts",
     "test": "npx hardhat test"
   },
   "keywords": [],
