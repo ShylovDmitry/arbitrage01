@@ -19,10 +19,12 @@ async function main() {
   //   [WETH, fee0, DAI, fee1, UNI, fee2, WETH]
   // );
   const amountIn = ethers.utils.parseUnits("100", 9);
+  const profitAmount = ethers.utils.parseUnits("1", 18);
 
   await uniswapTrade(
     networkName,
     amountIn,
+    profitAmount,
     WETH,
     fee0,
     DAI,
