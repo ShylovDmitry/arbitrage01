@@ -47,6 +47,9 @@ export async function uniswapTrade(
     return;
   }
 
+  // console.log(`---- PROFIT: ${ethers.utils.formatEther(profitAmountLeft)} ETH`);
+  // return;
+
   const [deployer] = await ethers.getSigners();
   console.log("Account:", await deployer.getAddress());
   console.log(

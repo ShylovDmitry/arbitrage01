@@ -1,10 +1,12 @@
 import { trade } from "./services/uniswapTrade";
 
 async function main() {
-  await trade();
+  const minProfitAmountEth = "0.003";
+
+  await trade(minProfitAmountEth);
 
   setInterval(async () => {
-    await trade();
+    await trade(minProfitAmountEth);
   }, 5 * 60 * 1000);
 }
 

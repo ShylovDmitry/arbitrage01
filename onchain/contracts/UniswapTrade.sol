@@ -20,7 +20,7 @@ contract UniswapTrade {
     }
 
     modifier onlyOwner() {
-        require(owner == msg.sender, "Only owner");
+        require(owner == msg.sender, "Only Owner");
         _;
     }
 
@@ -38,7 +38,7 @@ contract UniswapTrade {
             })
         );
 
-//        require(amountOut - amountIn > 0, "Trade not profitable");
+        require(amountOut > amountIn, "Trade Not Profitable");
         emit Trade(amountIn, amountOut);
     }
 }

@@ -84,7 +84,7 @@ function displayProfit({
   );
 }
 
-export async function trade() {
+export async function trade(minProfitAmountEth: string) {
   console.log(new Date().toString());
 
   console.info("INFO: retrieving pools...");
@@ -95,7 +95,9 @@ export async function trade() {
 
   console.time("ProfitableSwapPaths");
 
-  console.info("INFO: finding profitable swaps...");
+  console.info(
+    `INFO: finding profitable swaps for ${minProfitAmountEth} ETH...`
+  );
   const profitableSwapsArray = await Promise.all([
     await getProfitableSwapPaths(0.1, swapPaths),
     await getProfitableSwapPaths(0.15, swapPaths),
@@ -112,7 +114,7 @@ export async function trade() {
 
   const minProfitAmount = CurrencyAmount.fromRawAmount(
     WETH,
-    ethers.utils.parseUnits("0.003", WETH.decimals).toString()
+    ethers.utils.parseUnits(minProfitAmountEth, WETH.decimals).toString()
   );
 
   const profitableSwaps = profitableSwapsArray
@@ -156,4 +158,5 @@ export async function trade() {
   }
 
   console.timeEnd("ProfitableSwapPaths");
+  console.log("");
 }
