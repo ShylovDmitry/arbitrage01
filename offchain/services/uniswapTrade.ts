@@ -122,7 +122,7 @@ export async function trade(minProfitAmountEth: string) {
     .sort((a, b) =>
       a.profitAmount.toExact().localeCompare(b.profitAmount.toExact())
     );
-  profitableSwaps.map(displayProfit);
+  // profitableSwaps.map(displayProfit);
 
   const mostProfitableSwap = profitableSwaps[profitableSwaps.length - 1];
   if (mostProfitableSwap) {
