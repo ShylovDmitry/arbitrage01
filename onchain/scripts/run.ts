@@ -14,10 +14,7 @@ async function main() {
   const fee1 = "3000";
   const UNI = "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984";
   const fee2 = "3000";
-  // const path = ethers.utils.solidityPack(
-  //   ["uint160", "uint24", "uint160", "uint24", "uint160", "uint24", "uint160"],
-  //   [WETH, fee0, DAI, fee1, UNI, fee2, WETH]
-  // );
+
   const amountIn = ethers.utils.parseUnits("100", 9);
   const profitAmount = ethers.utils.parseUnits("1", 18);
 
