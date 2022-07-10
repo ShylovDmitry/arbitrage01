@@ -65,7 +65,7 @@ export async function uniswapTrade(
     [token0, fee01, token1, fee12, token2, fee23, token3]
   );
 
-  console.log([token0, fee01, token1, fee12, token2, fee23, token3]);
+  // console.log([token0, fee01, token1, fee12, token2, fee23, token3]);
 
   const trade = await contact
     .connect(deployer)

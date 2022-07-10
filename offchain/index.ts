@@ -5,15 +5,17 @@ async function main() {
 
   try {
     await trade(minProfitAmountEth);
-  } catch (e) {
-    console.error(e);
+  } catch (e: any) {
+    console.log("ERROR", e?.message);
+    // console.error(e);
   }
 
   setInterval(async () => {
     try {
       await trade(minProfitAmountEth);
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      console.log("ERROR", e?.message);
+      // console.error(e);
     }
   }, 5 * 60 * 1000);
 }

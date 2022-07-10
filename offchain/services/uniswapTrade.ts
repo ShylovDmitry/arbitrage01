@@ -99,15 +99,14 @@ export async function trade(minProfitAmountEth: string) {
     `INFO: finding profitable swaps for ${minProfitAmountEth} ETH...`
   );
   const profitableSwapsArray = await Promise.all([
-    await getProfitableSwapPaths(0.1, swapPaths),
-    await getProfitableSwapPaths(0.15, swapPaths),
+    // await getProfitableSwapPaths(0.1, swapPaths),
+    // await getProfitableSwapPaths(0.15, swapPaths),
     // await getProfitableSwapPaths(0.3, swapPaths),
     // await getProfitableSwapPaths(0.4, swapPaths),
-    // await getProfitableSwapPaths(0.5, swapPaths),
-    //
-    // await getProfitableSwapPaths(1, swapPaths),
-    // await getProfitableSwapPaths(1.5, swapPaths),
-    // await getProfitableSwapPaths(2, swapPaths),
+    await getProfitableSwapPaths(0.5, swapPaths),
+    await getProfitableSwapPaths(1, swapPaths),
+    await getProfitableSwapPaths(1.5, swapPaths),
+    await getProfitableSwapPaths(2, swapPaths),
     // await getProfitableSwapPaths(2.5, swapPaths),
     // await getProfitableSwapPaths(3, swapPaths),
   ]);

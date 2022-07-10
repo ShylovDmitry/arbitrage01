@@ -1,4 +1,7 @@
 import axios from "axios";
+import axiosRetry from "axios-retry";
+
+axiosRetry(axios, { retries: 3, retryDelay: axiosRetry.exponentialDelay });
 
 const endpoint = "https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3";
 
