@@ -1,23 +1,23 @@
 import { getToken } from "../helpers";
 import uniswapApiService, { UniswapApiPool } from "./uniswap.api";
-import { ProfitableSwapPath } from "../interfaces/profitableSwapPath";
+import { ProfitableThreeSwapPath } from "../interfaces/profitableThreeSwapPath";
 import { CurrencyAmount } from "@uniswap/sdk-core";
 import { ethers } from "ethers";
-import { createPool, generateSwapPaths } from "./uniswap";
+import { createPool, generateThreeSwapPaths } from "./uniswap";
 import { uniswapTrade } from "../../onchain/src/uniswapTrade";
 
 const WETH = getToken("WETH");
 
-async function getProfitableSwapPaths(
+async function getProfitableThreeSwapPaths(
   amountInEth: number,
   swapPaths: [UniswapApiPool, UniswapApiPool, UniswapApiPool][]
-): Promise<ProfitableSwapPath[]> {
+): Promise<ProfitableThreeSwapPath[]> {
   const amountIn = CurrencyAmount.fromRawAmount(
     WETH,
     ethers.utils.parseUnits(amountInEth.toString(), WETH.decimals).toString()
   );
 
-  const profitableSwapPaths: ProfitableSwapPath[] = [];
+  const profitableSwapPaths: ProfitableThreeSwapPath[] = [];
   for (const [pool0, pool1, pool2] of swapPaths) {
     try {
       const [amountOut0] = await createPool(pool0).getOutputAmount(amountIn);
@@ -44,13 +44,13 @@ async function getProfitableSwapPaths(
   return profitableSwapPaths;
 }
 
-function displayProfit({
+function displayThreeProfit({
   amountIn,
   profitAmount,
   pool0,
   pool1,
   pool2,
-}: ProfitableSwapPath) {
+}: ProfitableThreeSwapPath) {
   console.log(`-----------------`);
   console.log(
     `[${pool0.token0.symbol}, ${pool0.token1.symbol}] [${pool1.token0.symbol}, ${pool1.token1.symbol}] [${pool2.token0.symbol}, ${pool2.token1.symbol}]`
@@ -84,14 +84,14 @@ function displayProfit({
   );
 }
 
-export async function trade(minProfitAmountEth: string) {
+export async function tradeFlow(minProfitAmountEth: string) {
   console.log(new Date().toString());
 
   console.info("INFO: retrieving pools...");
   const pools = await uniswapApiService.getAllPools();
 
   console.info("INFO: generating swaps...");
-  const swapPaths = await generateSwapPaths(pools);
+  const swapPaths = await generateThreeSwapPaths(pools);
 
   console.time("ProfitableSwapPaths");
 
@@ -99,16 +99,7 @@ export async function trade(minProfitAmountEth: string) {
     `INFO: finding profitable swaps for ${minProfitAmountEth} ETH...`
   );
   const profitableSwapsArray = await Promise.all([
-    // await getProfitableSwapPaths(0.1, swapPaths),
-    // await getProfitableSwapPaths(0.15, swapPaths),
-    // await getProfitableSwapPaths(0.3, swapPaths),
-    // await getProfitableSwapPaths(0.4, swapPaths),
-    await getProfitableSwapPaths(0.5, swapPaths),
-    await getProfitableSwapPaths(1, swapPaths),
-    await getProfitableSwapPaths(1.5, swapPaths),
-    await getProfitableSwapPaths(2, swapPaths),
-    // await getProfitableSwapPaths(2.5, swapPaths),
-    // await getProfitableSwapPaths(3, swapPaths),
+    await getProfitableThreeSwapPaths(1, swapPaths),
   ]);
 
   const minProfitAmount = CurrencyAmount.fromRawAmount(
@@ -122,39 +113,42 @@ export async function trade(minProfitAmountEth: string) {
     .sort((a, b) =>
       a.profitAmount.toExact().localeCompare(b.profitAmount.toExact())
     );
-  // profitableSwaps.map(displayProfit);
 
-  const mostProfitableSwap = profitableSwaps[profitableSwaps.length - 1];
-  if (mostProfitableSwap) {
-    console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-    console.log("----- Most Profitable -----");
-    displayProfit(mostProfitableSwap);
+  console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+  console.log("----- Most Profitable -----");
+  profitableSwaps.map(displayThreeProfit);
 
-    const { amountIn, pool0, pool1, pool2, profitAmount } = mostProfitableSwap;
-
-    await uniswapTrade(
-      "mainnet",
-      ethers.utils.parseUnits(amountIn.toExact(), WETH.decimals),
-      ethers.utils.parseUnits(profitAmount.toExact(), WETH.decimals),
-      pool0.token0.id.toLowerCase() === WETH.address.toLowerCase()
-        ? pool0.token0.id
-        : pool0.token1.id,
-      pool0.feeTier,
-      pool0.token0.id.toLowerCase() !== WETH.address.toLowerCase()
-        ? pool0.token0.id
-        : pool0.token1.id,
-      pool1.feeTier,
-      pool2.token0.id.toLowerCase() !== WETH.address.toLowerCase()
-        ? pool2.token0.id
-        : pool2.token1.id,
-      pool2.feeTier,
-      pool2.token0.id.toLowerCase() === WETH.address.toLowerCase()
-        ? pool2.token0.id
-        : pool2.token1.id
-    );
-  } else {
-    console.log("No swaps");
-  }
+  // const mostProfitableSwap = profitableSwaps[profitableSwaps.length - 1];
+  // if (mostProfitableSwap) {
+  //   console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+  //   console.log("----- Most Profitable -----");
+  //   displayThreeProfit(mostProfitableSwap);
+  //
+  //   const { amountIn, pool0, pool1, pool2, profitAmount } = mostProfitableSwap;
+  //
+  //   await uniswapTrade(
+  //     "mainnet",
+  //     ethers.utils.parseUnits(amountIn.toExact(), WETH.decimals),
+  //     ethers.utils.parseUnits(profitAmount.toExact(), WETH.decimals),
+  //     pool0.token0.id.toLowerCase() === WETH.address.toLowerCase()
+  //       ? pool0.token0.id
+  //       : pool0.token1.id,
+  //     pool0.feeTier,
+  //     pool0.token0.id.toLowerCase() !== WETH.address.toLowerCase()
+  //       ? pool0.token0.id
+  //       : pool0.token1.id,
+  //     pool1.feeTier,
+  //     pool2.token0.id.toLowerCase() !== WETH.address.toLowerCase()
+  //       ? pool2.token0.id
+  //       : pool2.token1.id,
+  //     pool2.feeTier,
+  //     pool2.token0.id.toLowerCase() === WETH.address.toLowerCase()
+  //       ? pool2.token0.id
+  //       : pool2.token1.id
+  //   );
+  // } else {
+  //   console.log("No swaps");
+  // }
 
   console.timeEnd("ProfitableSwapPaths");
   console.log("");

@@ -1,10 +1,10 @@
-import { trade } from "./services/uniswapTrade";
+import { tradeFlow } from "./services/uniswapTradeFlow";
 
 async function main() {
-  const minProfitAmountEth = "0.003";
+  const minProfitAmountEth = "0.001";
 
   try {
-    await trade(minProfitAmountEth);
+    await tradeFlow(minProfitAmountEth);
   } catch (e: any) {
     console.log("ERROR", e?.message);
     // console.error(e);
@@ -12,7 +12,7 @@ async function main() {
 
   setInterval(async () => {
     try {
-      await trade(minProfitAmountEth);
+      await tradeFlow(minProfitAmountEth);
     } catch (e: any) {
       console.log("ERROR", e?.message);
       // console.error(e);

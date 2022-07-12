@@ -17,7 +17,7 @@ export async function uniswapTrade(
   fee23: string,
   token3: string
 ) {
-  const gasLimit = 350000;
+  const gasLimit = 450000;
 
   const provider = new ethers.providers.InfuraProvider(networkName, {
     projectId: process.env.INFURA_PROJECT_ID,

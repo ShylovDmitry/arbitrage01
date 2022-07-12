@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "research": "ts-node offchain/index.ts",
+    "research:flow": "ts-node offchain/index-flow.ts",
+    "research:three": "ts-node offchain/index-three.ts",
+    "research:four": "ts-node offchain/index-four.ts",
     "mainnet:deploy": "npx hardhat run onchain/scripts/deploy.ts",
     "mainnet:run": "npx hardhat run onchain/scripts/run.ts",
     "mainnet:watch": "npx hardhat run onchain/scripts/watch.ts",

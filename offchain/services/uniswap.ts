@@ -35,7 +35,7 @@ export function createPool(pool: UniswapApiPool): Pool {
   );
 }
 
-export async function generateSwapPaths(
+export async function generateThreeSwapPaths(
   pools: UniswapApiPool[]
 ): Promise<[UniswapApiPool, UniswapApiPool, UniswapApiPool][]> {
   const swapPaths: [UniswapApiPool, UniswapApiPool, UniswapApiPool][] = [];
@@ -54,22 +54,85 @@ export async function generateSwapPaths(
       if (i === j) continue;
       const pool2 = ethPools[j];
 
-      const findToken0 =
-        pool0.token0.symbol !== "WETH" ? pool0.token0 : pool0.token1;
       const findToken1 =
+        pool0.token0.symbol !== "WETH" ? pool0.token0 : pool0.token1;
+      const findToken2 =
         pool2.token0.symbol !== "WETH" ? pool2.token0 : pool2.token1;
 
       nonEthPools
-        .filter(({ token0, token1 }) => {
-          return (
-            (token0.id === findToken0.id && token1.id === findToken1.id) ||
-            (token0.id === findToken1.id && token1.id === findToken0.id)
-          );
-        })
-        .map((pool1) => {
+        .filter(
+          ({ token0, token1 }) =>
+            (token0.id === findToken1.id && token1.id === findToken2.id) ||
+            (token0.id === findToken2.id && token1.id === findToken1.id)
+        )
+        .forEach((pool1) => {
           swapPaths.push([pool0, pool1, pool2]);
         });
     }
   }
   return swapPaths;
+}
+
+export async function generateFourSwapPaths(
+  pools: UniswapApiPool[]
+): Promise<[UniswapApiPool, UniswapApiPool, UniswapApiPool, UniswapApiPool][]> {
+  const swapPaths: [
+    UniswapApiPool,
+    UniswapApiPool,
+    UniswapApiPool,
+    UniswapApiPool
+  ][] = [];
+
+  const ethPools = getEthPools(pools);
+  const nonEthPools = getNonEthPools(pools);
+
+  for (let i = 0; i < ethPools.length; i++) {
+    const pool0 = ethPools[i];
+
+    for (let j = 0; j < ethPools.length; j++) {
+      if (i === j) continue;
+      const pool3 = ethPools[j];
+
+      const findToken1 =
+        pool0.token0.symbol !== "WETH" ? pool0.token0 : pool0.token1;
+      const findToken3 =
+        pool3.token0.symbol !== "WETH" ? pool3.token0 : pool3.token1;
+
+      const nonEthPools1 = nonEthPools.filter(({ token0, token1 }) => {
+        return token0.id === findToken1.id || token1.id === findToken1.id;
+      });
+
+      for (let k = 0; k < nonEthPools1.length; k++) {
+        const pool1 = nonEthPools1[k];
+
+        const findToken2 =
+          pool1.token0.symbol !== findToken1.symbol
+            ? pool1.token0
+            : pool1.token1;
+
+        nonEthPools
+          .filter(
+            ({ token0, token1 }) =>
+              (token0.id === findToken2.id && token1.id === findToken3.id) ||
+              (token0.id === findToken3.id && token1.id === findToken2.id)
+          )
+          .forEach((pool2) => {
+            swapPaths.push([pool0, pool1, pool2, pool3]);
+          });
+      }
+    }
+  }
+  return swapPaths;
+}
+
+export function getEthPools(pools: UniswapApiPool[]): UniswapApiPool[] {
+  return pools.filter(
+    ({ token0, token1 }) => token0.symbol === "WETH" || token1.symbol === "WETH"
+  );
+}
+
+export function getNonEthPools(pools: UniswapApiPool[]): UniswapApiPool[] {
+  return pools.filter(
+    ({ token0, token1 }) => token0.symbol !== "WETH" && token1.symbol !== "WETH"
+  );
 }
