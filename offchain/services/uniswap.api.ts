@@ -1,36 +1,11 @@
 import axios from "axios";
 import axiosRetry from "axios-retry";
+import { UniswapApiTick } from "../interfaces/uniswapApiTick";
+import { UniswapApiPool } from "../interfaces/uniswapApiPool";
 
 axiosRetry(axios, { retries: 3, retryDelay: axiosRetry.exponentialDelay });
 
 const endpoint = "https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3";
-
-export interface UniswapApiTick {
-  index: number;
-  liquidityNet: string;
-  liquidityGross: string;
-}
-
-export interface UniswapApiPool {
-  id: string;
-  feeTier: string;
-  sqrtPrice: string;
-  liquidity: string;
-  tick: string;
-  ticks: UniswapApiTick[];
-  token0: {
-    id: string;
-    name: string;
-    symbol: string;
-    decimals: string;
-  };
-  token1: {
-    id: string;
-    name: string;
-    symbol: string;
-    decimals: string;
-  };
-}
 
 async function getTicksForPool(
   poolId: string,
@@ -110,15 +85,17 @@ async function getPools(
 
   // console.log(response.data.errors);
   const pools: UniswapApiPool[] = response.data.data.pools;
+
   await Promise.all(
     pools.map(async (pool) => {
-      if (pool.ticks.length === 100) {
+      if (pool.ticks.length === 1000) {
         let ticks: UniswapApiTick[];
+        const ticksLimit = pool.ticks.length;
         let ticksSkip = 0;
 
         do {
-          ticksSkip += 100;
-          ticks = await getTicksForPool(pool.id, 100, ticksSkip);
+          ticksSkip += ticksLimit;
+          ticks = await getTicksForPool(pool.id, ticksLimit, ticksSkip);
           pool.ticks = [...pool.ticks, ...ticks];
         } while (ticks.length > 0);
       }
@@ -129,9 +106,9 @@ async function getPools(
 }
 
 export async function getAllPools(): Promise<UniswapApiPool[]> {
-  const limit = 100;
+  const limit = 1000;
   const result = await Promise.all(
-    [...Array(5).keys()].map((val) => getPools(limit, val * limit))
+    [...Array(1).keys()].map((val) => getPools(limit, val * limit))
   );
   return result.flat();
 }

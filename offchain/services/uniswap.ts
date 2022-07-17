@@ -1,7 +1,7 @@
 import { Pool } from "@uniswap/v3-sdk";
 import { Token } from "@uniswap/sdk-core";
-import { UniswapApiPool } from "./uniswap.api";
 import { getChainId } from "../helpers";
+import { UniswapApiPool } from "../interfaces/uniswapApiPool";
 
 export function createPool(pool: UniswapApiPool): Pool {
   const token0 = new Token(

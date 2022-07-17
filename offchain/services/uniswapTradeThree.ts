@@ -1,10 +1,11 @@
 import { getToken } from "../helpers";
-import uniswapApiService, { UniswapApiPool } from "./uniswap.api";
+import uniswapApiService from "./uniswap.api";
 import { ProfitableThreeSwapPath } from "../interfaces/profitableThreeSwapPath";
 import { CurrencyAmount } from "@uniswap/sdk-core";
 import { ethers } from "ethers";
 import { createPool, generateThreeSwapPaths } from "./uniswap";
 import { uniswapTrade } from "../../onchain/src/uniswapTrade";
+import { UniswapApiPool } from "../interfaces/uniswapApiPool";
 
 const WETH = getToken("WETH");
 
@@ -88,7 +89,9 @@ export async function tradeThree(minProfitAmountEth: string) {
   console.log(new Date().toString());
 
   console.info("INFO: retrieving pools...");
+  console.time("a");
   const pools = await uniswapApiService.getAllPools();
+  console.timeEnd("a");
 
   console.info("INFO: generating swaps...");
   const swapPaths = await generateThreeSwapPaths(pools);

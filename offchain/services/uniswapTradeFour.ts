@@ -1,10 +1,11 @@
 import { getToken } from "../helpers";
-import uniswapApiService, { UniswapApiPool } from "./uniswap.api";
+import uniswapApiService from "./uniswap.api";
 import { CurrencyAmount } from "@uniswap/sdk-core";
 import { ethers } from "ethers";
 import { createPool, generateFourSwapPaths } from "./uniswap";
 import { uniswapTrade } from "../../onchain/src/uniswapTrade";
 import { ProfitableFourSwapPath } from "../interfaces/profitableFourSwapPath";
+import { UniswapApiPool } from "../interfaces/uniswapApiPool";
 
 const WETH = getToken("WETH");
 

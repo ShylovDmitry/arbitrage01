@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "start": "ts-node offchain/index.ts",
     "research:flow": "ts-node offchain/index-flow.ts",
     "research:three": "ts-node offchain/index-three.ts",
     "research:four": "ts-node offchain/index-four.ts",
@@ -21,6 +22,7 @@
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.6",
     "@nomiclabs/hardhat-waffle": "^2.0.3",
+    "@types/ws": "^8.5.3",
     "@uniswap/default-token-list": "^3.2.0",
     "@uniswap/sdk": "^3.0.3",
     "@uniswap/sdk-core": "^3.0.1",
@@ -46,9 +48,14 @@
     "@uniswap/v3-periphery": "^1.4.1",
     "axios-retry": "^3.3.1",
     "dotenv": "^16.0.1",
+    "graphql-request": "^4.3.0",
+    "graphql-transport-ws": "^1.9.0",
+    "graphql-ws": "^5.9.1",
     "hardhat-gas-reporter": "^1.0.8",
     "prettier": "^2.7.1",
     "solidity-coverage": "^0.7.21",
-    "tslib": "^2.4.0"
+    "subscriptions-transport-ws": "^0.11.0",
+    "tslib": "^2.4.0",
+    "ws": "^7.5.8"
   }
 }
