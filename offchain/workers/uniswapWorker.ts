@@ -2,27 +2,18 @@ import { parentPort, workerData } from "worker_threads";
 import { UniswapApiPool } from "../interfaces/uniswapApiPool";
 import { UniswapApiTick } from "../interfaces/uniswapApiTick";
 import { gql, GraphQLClient } from "graphql-request";
-import { SubscriptionClient } from "subscriptions-transport-ws";
-import ws from "ws";
 
 const poolsLimit = workerData.poolsLimit;
 
 const endpointHttp =
   "https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3";
-const endpointWs = "wss://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3";
 
 const client = new GraphQLClient(endpointHttp);
-const clientWs = new SubscriptionClient(endpointWs, { reconnect: true }, ws);
 
-const rawPoolsMap = new Map<
-  string,
-  Pick<UniswapApiPool, "liquidity" | "sqrtPrice" | "tick">
->();
-
-async function getPoolIds(
+async function getPools(
   first: number,
   skip: number = 0
-): Promise<{ id: string }[]> {
+): Promise<UniswapApiPool[]> {
   const query = gql`
     query getPools($first: Int, $skip: Int) {
       pools(
@@ -32,6 +23,27 @@ async function getPoolIds(
         orderDirection: desc
       ) {
         id
+        feeTier
+        sqrtPrice
+        liquidity
+        tick
+        ticks(first: 1000) {
+          index: tickIdx
+          liquidityNet
+          liquidityGross
+        }
+        token0 {
+          id
+          name
+          symbol
+          decimals
+        }
+        token1 {
+          id
+          name
+          symbol
+          decimals
+        }
       }
     }
   `;
@@ -60,116 +72,79 @@ async function getTicksForPool(
   return data.pool.ticks;
 }
 
-function subscribeToPool(
-  poolId: string,
-  { next }: { next(pool: UniswapApiPool): void }
-) {
-  const query = gql`
-    subscription ($poolId: String) {
-      pool(id: $poolId) {
-        id
-        feeTier
-        sqrtPrice
-        liquidity
-        tick
-        ticks(first: 1000) {
-          index: tickIdx
-          liquidityNet
-          liquidityGross
-        }
-        token0 {
-          id
-          name
-          symbol
-          decimals
-        }
-        token1 {
-          id
-          name
-          symbol
-          decimals
-        }
+async function next(pools: UniswapApiPool[]) {
+  await Promise.all(
+    pools.map(async (pool) => {
+      if (pool.ticks.length === 1000) {
+        let ticks: UniswapApiTick[];
+        const ticksLimit = pool.ticks.length;
+        let ticksSkip = 0;
+
+        do {
+          ticksSkip += ticksLimit;
+          ticks = await getTicksForPool(pool.id, ticksLimit, ticksSkip);
+          pool.ticks = [...pool.ticks, ...ticks];
+        } while (ticks.length > 0);
       }
-    }
-  `;
-
-  clientWs.request({ query, variables: { poolId } }).subscribe({
-    next(results: any) {
-      next(results.data.pool);
-    },
-    error(error: any) {
-      console.error(error);
-    },
-    complete() {
-      console.log("com");
-    },
-  });
-}
-
-function subscribeToPoolFake({ next }: { next(pool: UniswapApiPool): void }) {
-  const query = gql`
-    subscription aaa($poolId: String) {
-      pool(id: $poolId) {
-        id
-      }
-    }
-  `;
-
-  clientWs
-    .request({
-      query,
-      variables: { poolId: "0x0002e63328169d7feea121f1e32e4f620abf0352" },
+      return pool;
     })
-    .subscribe({
-      next(results: any) {
-        console.log(results);
-      },
-      error(error: any) {
-        console.error(error);
-      },
-      complete() {
-        console.log("com");
-      },
-    });
+  );
+
+  parentPort!.postMessage(pools);
 }
 
-async function next(pool: UniswapApiPool) {
-  const rawPool = rawPoolsMap.get(pool.id);
-
-  if (
-    !rawPool ||
-    rawPool.liquidity !== pool.liquidity ||
-    rawPool.sqrtPrice !== pool.sqrtPrice ||
-    rawPool.tick !== pool.tick
-  ) {
-    rawPoolsMap.set(pool.id, {
-      liquidity: pool.liquidity,
-      sqrtPrice: pool.sqrtPrice,
-      tick: pool.tick,
-    });
-
-    if (pool.ticks.length === 1000) {
-      let ticks: UniswapApiTick[];
-      const ticksLimit = pool.ticks.length;
-      let ticksSkip = 0;
-
-      do {
-        ticksSkip += ticksLimit;
-        ticks = await getTicksForPool(pool.id, ticksLimit, ticksSkip);
-        pool.ticks = [...pool.ticks, ...ticks];
-      } while (ticks.length > 0);
-    }
-
-    parentPort!.postMessage([pool]);
+parentPort!.on("message", async () => {
+  const numRequests = Math.floor(poolsLimit / 1000);
+  const restRequests = poolsLimit % 1000;
+  let requestLimits = [...Array(numRequests).keys()].map((val) =>
+    val ? 1000 * val : 1000
+  );
+  if (restRequests) {
+    requestLimits.push(restRequests);
   }
-}
 
-(async () => {
-  const pools = await getPoolIds(poolsLimit);
-  console.log(pools.length);
+  try {
+    const pools = (
+      await Promise.all(
+        requestLimits.map((val, index) => getPools(val, index * 1000))
+      )
+    ).flat();
 
-  subscribeToPoolFake({ next });
-  // pools.forEach((pool) => {
-  //   subscribeToPool(pool.id, { next });
-  // });
-})();
+    await next(pools);
+  } catch (e) {
+    // console.error("ERROR", (e as Error).message);
+  }
+});
+
+// (async () => {
+//   const numRequests = Math.floor(poolsLimit / 1000);
+//   const restRequests = poolsLimit % 1000;
+//   let requests = [...Array(numRequests).keys()].map((val) =>
+//     val ? 1000 * val : 1000
+//   );
+//   if (restRequests) {
+//     requests.push(restRequests);
+//   }
+//
+//   try {
+//     // const pools = await getPools(poolsLimit);
+//     const pools = (
+//       await Promise.all(
+//         requests.map((val, index) => getPools(val, index * 1000))
+//       )
+//     ).flat();
+//
+//     await next(pools);
+//   } catch (e) {
+//     console.error("ERROR", (e as Error).message);
+//   }
+// })();
+
+// cron.schedule("* * * * *", async () => {
+//   try {
+//     const pools = await getPools(poolsLimit);
+//     await next(pools);
+//   } catch (e) {
+//     console.error("ERROR", (e as Error).message);
+//   }
+// });
