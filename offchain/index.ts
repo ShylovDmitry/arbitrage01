@@ -6,7 +6,9 @@ import { ethers } from "ethers";
 import { UniswapApiPool } from "./interfaces/uniswapApiPool";
 import { createPool } from "./services/uniswap";
 import cron from "node-cron";
+import { uniswapTrade } from "../onchain/src/uniswapTrade";
 
+let isPaused = false;
 const poolsLimit = 1000;
 const ignoreTokens = ["AMPL"];
 const WETH = WETH9[ChainId.MAINNET];
@@ -139,13 +141,8 @@ async function calculate() {
   });
   const swaps = await Promise.all(promiseSwaps);
 
-  const minProfitAmount = CurrencyAmount.fromRawAmount(
-    WETH,
-    ethers.utils.parseUnits("0", WETH.decimals).toString()
-  );
   const profitableSwaps = swaps
-    .filter((swap) => swap !== null)
-    .filter((swap) => swap!.profitAmount.greaterThan(minProfitAmount))
+    .filter((swap) => swap !== null && swap.profitAmount.greaterThan(0))
     .sort((a, b) => (a!.profitAmount.greaterThan(b!.profitAmount) ? -1 : 1));
 
   // profitableSwaps.map((swap) => {
@@ -159,11 +156,11 @@ async function calculate() {
   // });
 
   let usedPoolAddresses: string[] = [];
-  let totalProfit = CurrencyAmount.fromRawAmount(
+  let totalProfitAmount = CurrencyAmount.fromRawAmount(
     WETH,
     ethers.utils.parseUnits("0", WETH.decimals).toString()
   );
-  const foundProfitableSwap: SwapResult[] = [];
+  const bestProfitableSwaps: SwapResult[] = [];
   for (const profitableSwap of profitableSwaps) {
     if (
       profitableSwap!.poolAddresses.some((poolAddress) =>
@@ -177,16 +174,16 @@ async function calculate() {
       ...profitableSwap!.poolAddresses,
     ];
 
-    foundProfitableSwap.push(profitableSwap!);
-    totalProfit = totalProfit.add(profitableSwap!.profitAmount);
+    bestProfitableSwaps.push(profitableSwap!);
+    totalProfitAmount = totalProfitAmount.add(profitableSwap!.profitAmount);
 
-    if (foundProfitableSwap.length == 3) {
+    if (bestProfitableSwaps.length == 3) {
       break;
     }
   }
 
   console.log("-------");
-  foundProfitableSwap.map((swap) => {
+  bestProfitableSwaps.map((swap) => {
     console.log(
       swap!.flowKey,
       swap!.amountIn.toExact(),
@@ -196,12 +193,49 @@ async function calculate() {
   });
   console.log(
     "totalProfit",
-    totalProfit.toExact(),
-    `$${totalProfit.multiply(1000).toFixed(2)}`
+    totalProfitAmount.toExact(),
+    `$${totalProfitAmount.multiply(1000).toFixed(2)}`
   );
+
+  const minTotalProfitAmount = CurrencyAmount.fromRawAmount(
+    WETH,
+    ethers.utils.parseUnits("0.003", WETH.decimals).toString()
+  );
+  if (totalProfitAmount.greaterThan(minTotalProfitAmount)) {
+    const packKeys: string[] = ["uint160"];
+    const packValues: string[] = [WETH.address];
+    let lastTokenAddress = WETH.address;
+    bestProfitableSwaps.forEach((bestProfitableSwap) => {
+      bestProfitableSwap.poolAddresses.forEach((poolAddress) => {
+        const pool = poolsMap.get(poolAddress)!;
+        lastTokenAddress =
+          lastTokenAddress === pool.token0.address
+            ? pool.token1.address
+            : pool.token0.address;
+
+        packKeys.push("uint24");
+        packValues.push(String(pool.fee));
+        packKeys.push("uint160");
+        packValues.push(lastTokenAddress);
+      });
+    });
+
+    const path = ethers.utils.solidityPack(packKeys, packValues);
+    const res = await uniswapTrade(
+      "mainnet",
+      ethers.utils.parseUnits(amountIn1.toExact(), WETH.decimals),
+      ethers.utils.parseUnits(totalProfitAmount.toExact(), WETH.decimals),
+      path
+    );
+    if (res) {
+      isPaused = true;
+    }
+  }
 }
 
 cron.schedule("* * * * *", () => {
-  console.info("Retrieving pools", new Date().toString());
-  worker.postMessage("run");
+  if (!isPaused) {
+    console.info("Retrieving pools", new Date().toString());
+    worker.postMessage("run");
+  }
 });

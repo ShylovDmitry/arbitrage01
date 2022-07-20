@@ -9,15 +9,9 @@ export async function uniswapTrade(
   networkName: string,
   amountIn: BigNumber,
   profitAmount: BigNumber,
-  token0: string,
-  fee01: string,
-  token1: string,
-  fee12: string,
-  token2: string,
-  fee23: string,
-  token3: string
+  path: string
 ) {
-  const gasLimit = 450000;
+  const gasLimit = 600000;
 
   const provider = new ethers.providers.InfuraProvider(networkName, {
     projectId: process.env.INFURA_PROJECT_ID,
@@ -60,16 +54,16 @@ export async function uniswapTrade(
   const { contactAddress, contactAbi } = getContactData(networkName);
   const contact = new ethers.Contract(contactAddress, contactAbi, provider);
 
-  const path = ethers.utils.solidityPack(
-    ["uint160", "uint24", "uint160", "uint24", "uint160", "uint24", "uint160"],
-    [token0, fee01, token1, fee12, token2, fee23, token3]
-  );
+  // const path = ethers.utils.solidityPack(
+  //   ["uint160", "uint24", "uint160", "uint24", "uint160", "uint24", "uint160"],
+  //   [token0, fee01, token1, fee12, token2, fee23, token3]
+  // );
 
   // console.log([token0, fee01, token1, fee12, token2, fee23, token3]);
 
   const trade = await contact
     .connect(deployer)
-    .swap(path, { value: amountIn, maxPriorityFeePerGas, gasLimit });
+    .swap(path, { value: amountIn, maxPriorityFeePerGas, gasLimit: 1000000 });
   await trade.wait();
 
   console.log("UniswapTrade says:", trade);
@@ -77,6 +71,8 @@ export async function uniswapTrade(
     "Account balance AFTER:",
     (await deployer.getBalance()).toString()
   );
+
+  return true;
 }
 
 function getContactData(networkName: string) {
