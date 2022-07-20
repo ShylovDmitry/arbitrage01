@@ -26,7 +26,7 @@ interface SwapResult {
 
 const worker = new Worker("./offchain/workerProxy.js", {
   workerData: {
-    path: "./workers/uniswapWorker.ts",
+    path: "./workers/uniswapV3Worker.ts",
     poolsLimit,
   },
 });
