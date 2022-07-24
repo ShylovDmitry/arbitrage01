@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "ts-node offchain/index.ts",
+    "research:v2v3": "ts-node offchain/index-2.ts",
     "research:flow": "ts-node offchain/index-flow.ts",
     "research:three": "ts-node offchain/index-three.ts",
     "research:four": "ts-node offchain/index-four.ts",
