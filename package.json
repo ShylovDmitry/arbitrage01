@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "ts-node offchain/index.ts",
+    "start": "ts-node offchain/index-3.ts",
     "research:v2v3": "ts-node offchain/index-2.ts",
     "research:flow": "ts-node offchain/index-flow.ts",
     "research:three": "ts-node offchain/index-three.ts",
