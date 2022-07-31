@@ -1,4 +1,5 @@
 export interface UniswapV2ApiPair {
+  type?: string;
   id: string;
   reserve0: string;
   reserve1: string;
